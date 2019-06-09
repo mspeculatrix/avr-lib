@@ -1,3 +1,6 @@
+avr-external
+avr-common/snippets
+
 # Prerequisites
 *.d
 
