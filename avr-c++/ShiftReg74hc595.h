@@ -40,8 +40,19 @@ class ShiftReg74hc595
 		// Set pins as outputs
 		*dirReg = *dirReg | (1 << shift_CP) | (1 << store_CP) | (1 << data_DS);
 		// set initial states for clock pins
-		_setPin(shift_CP, LOW);	// start LOW ready for shifting
-		_setPin(store_CP, LOW);	// start LOW ready for latching
+		this->_setPin(shift_CP, LOW);	// start LOW ready for shifting
+		this->_setPin(store_CP, HIGH);	// start HIGH ready for latching
+		this->_shiftOut(0);
+	}
+
+	void setAllHigh(void)
+	{
+		_shiftOut(255);
+	}
+
+	void setAllLow (void)
+	{
+		_shiftOut(0);
 	}
 
 	void shiftOut(uint8_t byteVal, uint8_t bitOrder = MSBFIRST, bool invert = false)
@@ -76,19 +87,18 @@ class ShiftReg74hc595
 			if (invert) {
 				byteVal = 0xFF ^ byteVal;
 			}
-			if (!latching) _setPin(store_CP, HIGH);
-			for(uint8_t bit=0; bit < 8; bit++) {			// Clock in data
+			if (latching) _setPin(store_CP, LOW);		// store bits before making available on output
+			for(uint8_t bit=0; bit<8; bit++) {			// Clock in data
 				// the results of the following operations need to be a 1 or 0
 				if (bitOrder == LSBFIRST) {
 					_setPin(data_DS, (byteVal & (1 << bit)) >> bit);
 				} else {
 					_setPin(data_DS, (byteVal & (1 << (7 - bit))) >> (7 - bit) );
 				}
-				_setPin(shift_CP, HIGH);		// shift clock going high shifts in bit
-				_setPin(shift_CP, LOW);
+				_setPin(shift_CP, HIGH);		// take shift clock high to clock in bit
+				_setPin(shift_CP, LOW);			
 			}
 			_setPin(store_CP, HIGH);			// bring storage clock pulse high
-			_setPin(store_CP, LOW);				// then low to latch in data
 		}
 
 };
