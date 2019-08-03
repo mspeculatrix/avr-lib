@@ -31,6 +31,8 @@ void SMD_AVR_Serial::_init (uint16_t baudrate, uint8_t dataBits, uint8_t stopBit
     _dataBits = dataBits;
     _stopBits = stopBits;
     _started = false;
+	_useCR = false;
+	_sendNullTerminator = false;
 }
 
 // -------------------------------------------------------------------------
@@ -231,9 +233,89 @@ bool SMD_AVR_Serial::sendByte(uint8_t byteVal)
 	//sendByte(charcode);
 	//return resultCode;
 //}
-
 uint8_t SMD_AVR_Serial::write(const char * string)
 {
+	uint8_t error = _writeStr(string, false);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::write(const double fnum)
+{
+	uint8_t error = _writeDouble(fnum, false);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::write(const int twoByteInt)
+{
+	uint8_t error = _writeInt16(twoByteInt, false);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::write(const long longInt)
+{
+	uint8_t error = _writeLongInt(longInt, false);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::writeln(const char * string)
+{
+    uint8_t error = _writeStr(string, true);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::writeln(const int twoByteInt)
+{
+    uint8_t error = _writeInt16(twoByteInt, true);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::writeln(const long longInt)
+{
+    uint8_t error = _writeLongInt(longInt, true);
+    return error;
+}
+
+uint8_t SMD_AVR_Serial::writeln(const double fnum)
+{
+    uint8_t error = _writeDouble(fnum, true);
+    return error;
+}
+
+
+
+uint8_t SMD_AVR_Serial::_writeDouble(const double fnum, bool addReturn = false)
+{
+	uint8_t resultCode = 0;
+	char numStr[30];
+	// see: http://www.atmel.com/webdoc/AVRLibcReferenceManual/group__avr__stdlib_1ga060c998e77fb5fc0d3168b3ce8771d42.html
+	dtostrf(fnum,3,5,numStr);
+	_writeStr(numStr, addReturn);
+	return resultCode;
+}
+
+uint8_t SMD_AVR_Serial::_writeInt16(const int twoByteInt, bool addReturn = false)
+{
+	uint8_t resultCode = 0;
+	char numStr[20];
+	itoa(twoByteInt, numStr, 10);
+	//sprintf(numStr, "%i", twoByteInt);
+	_writeStr(numStr, addReturn);
+	return resultCode;
+}
+
+uint8_t SMD_AVR_Serial::_writeLongInt(const long longInt, bool addReturn = false)
+{
+	uint8_t resultCode = 0;
+	char numStr[30];
+	ltoa(longInt, numStr, 10);
+	_writeStr(numStr, addReturn);
+	return resultCode;
+}
+
+uint8_t SMD_AVR_Serial::_writeStr(const char * string, bool addReturn)
+{
+	// This is the main function used by the other
+	// write() and writeln() methods.
     uint8_t resultCode = 0;
     if (strlen(string) > 0) {
         uint8_t i = 0;
@@ -241,65 +323,13 @@ uint8_t SMD_AVR_Serial::write(const char * string)
             sendByte(string[i]);
             i++;
         } while (string[i] != 0);
+		if(addReturn) {
+			if(_useCR) sendByte(SER_CR);
+			sendByte(SER_NL);
+		}
+		if(_sendNullTerminator) sendByte(SER_NUL);
     } else {
         resultCode = SER_RES_EMPTY_STRING;
     }
     return resultCode;
-}
-
-uint8_t SMD_AVR_Serial::write(const double fnum)
-{
-    uint8_t resultCode = 0;
-    char numStr[30];
-    // see: http://www.atmel.com/webdoc/AVRLibcReferenceManual/group__avr__stdlib_1ga060c998e77fb5fc0d3168b3ce8771d42.html
-    dtostrf(fnum,3,5,numStr);
-    write(numStr);
-    return resultCode;
-}
-
-uint8_t SMD_AVR_Serial::write(const int twoByteInt)
-{
-    uint8_t resultCode = 0;
-    char numStr[20];
-    itoa(twoByteInt, numStr, 10);
-    //sprintf(numStr, "%i", twoByteInt);
-    write(numStr);
-    return resultCode;
-}
-
-uint8_t SMD_AVR_Serial::write(const long longInt)
-{
-    uint8_t resultCode = 0;
-    char numStr[30];
-    ltoa(longInt, numStr, 10);
-    write(numStr);
-    return resultCode;
-}
-
-uint8_t SMD_AVR_Serial::writeln(const char * string)
-{
-    uint8_t error = write(string);
-    if (!error) sendByte(SER_NL);
-    return error;
-}
-
-uint8_t SMD_AVR_Serial::writeln(const int twoByteInt)
-{
-    uint8_t error = write(twoByteInt);
-    if (!error) sendByte(SER_NL);
-    return error;
-}
-
-uint8_t SMD_AVR_Serial::writeln(const long longInt)
-{
-    uint8_t error = write(longInt);
-    if (!error) sendByte(SER_NL);
-    return error;
-}
-
-uint8_t SMD_AVR_Serial::writeln(const double fnum)
-{
-    uint8_t error = write(fnum);
-    if (!error) sendByte(SER_NL);
-    return error;
 }

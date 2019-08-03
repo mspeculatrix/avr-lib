@@ -67,6 +67,8 @@ class SMD_AVR_Serial {
         uint8_t begin();                // initialise
         bool started();
 		bool clearBuffer();
+		void useNullTerminator(bool sendNull) { _sendNullTerminator = sendNull; }
+		void addCarriageReturn(bool addCR) { _useCR = addCR; }
 
         // Receiving
         uint8_t getByte();              // read a byte - blocking
@@ -93,8 +95,14 @@ class SMD_AVR_Serial {
         bool _echo;
         uint8_t _stopBits;
         bool _started;
+		bool _sendNullTerminator;	// add null terminator 0 to end of all sends?
+		bool _useCR;
 
         void _init (uint16_t baudrate, uint8_t dataBits, uint8_t stopBits);
+        uint8_t _writeInt16(const int twoByteInt, bool addReturn);	// max value 32767
+        uint8_t _writeLongInt(const long longInt, bool addReturn);
+        uint8_t _writeDouble(const double fnum, bool addReturn);
+		uint8_t _writeStr(const char * string, bool addReturn);
         //int _max_int_size;
         //uint8_t _itoa_str_length;
 };
