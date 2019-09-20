@@ -314,8 +314,7 @@ uint8_t SMD_AVR_Serial::_writeLongInt(const long longInt, bool addReturn = false
 
 uint8_t SMD_AVR_Serial::_writeStr(const char * string, bool addReturn)
 {
-	// This is the main function used by the other
-	// write() and writeln() methods.
+	// This is the main function used by the other write() and writeln() methods.
     uint8_t resultCode = 0;
     if (strlen(string) > 0) {
         uint8_t i = 0;
